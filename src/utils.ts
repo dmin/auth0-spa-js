@@ -229,7 +229,7 @@ const switchFetch = async (url, opts, timeout, worker) => {
   }
 };
 
-const fetchWithTimeout = (
+const fetchWithTimeout = async (
   url,
   options,
   worker,
@@ -243,16 +243,20 @@ const fetchWithTimeout = (
     signal
   };
 
+  let timeoutId;
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
-  return Promise.race([
+  const response = await Promise.race([
     switchFetch(url, fetchOptions, timeout, worker),
     new Promise((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         controller.abort();
         reject(new Error("Timeout when executing 'fetch'"));
       }, timeout);
     })
   ]);
+  clearTimeout(timeoutId);
+
+  return response;
 };
 
 const getJSON = async (url, timeout, options, worker) => {
